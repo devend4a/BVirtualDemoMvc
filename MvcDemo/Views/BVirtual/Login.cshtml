@@ -1,0 +1,32 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Login</title>
+</head>
+<body>
+    <form action="@Url.Action("login", "bvirtual")" method="post">
+        <div id="Login">
+            <h2 style="color:red;">@ViewBag.Error</h2>
+            <label>User Name</label>
+            <br />
+            <input type="text" name="txtUserName" id="txtUserName" value="" />
+            <br />
+            <label>Password</label>
+            <br />
+            <input type="password" name="txtPassword" id="txtPassword" value="" /><br />
+            <select id="ddlLoginType" name="ddlLoginType">
+                <option value="">Select Type</option>
+                <option value="P">Proctor</option>
+                <option value="S">Student</option>
+            </select><br />
+            <input type="submit" value="Login" />
+        </div>
+    </form>
+</body>
+</html>

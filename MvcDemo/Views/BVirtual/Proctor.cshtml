@@ -1,0 +1,149 @@
+﻿@model MvcDemo.Models.UserInfo
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Proctor</title>
+    <link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+    <style type="text/css">
+        .user-box {
+            width: 100px;
+            height: 100px;
+            margin: 2px;
+            border: 1px solid green;
+            float: left;
+        }
+
+        #chat-heads {
+            display: none;
+        }
+
+        .chat-heads-dialog {
+            width: 350px;
+            height: 400px;
+        }
+
+            .chat-heads-dialog .messages {
+                height: 320px;
+                border: 1px solid gray;
+                overflow-y: scroll;
+            }
+
+            .chat-heads-dialog .txt {
+                width: 203px;
+            }
+
+        .message-you {
+            border: 1px solid pink;
+        }
+
+        .message-he {
+            border: 1px solid yellow;
+        }
+        .blink {
+        visibility:visible;
+        }
+    </style>
+    <style type="text/css">
+        .ui-app, .ui-widget {
+            font-family: Verdana,Arial,sans-serif;
+            font-size: 13.3333px !important;
+        }
+
+        .ui-dialog .ui-dialog-content {
+            position: relative;
+            border: 0 !important;
+            padding: .5em 1em;
+            background: none;
+            overflow: auto;
+            zoom: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-box-container">
+        @foreach (var item in MvcDemo.Models.UserLogin.loginDb.Where(P => P.IsProctor == false).ToList())
+        {
+            <div class="user-box">
+                <h2>@item.UserName</h2>
+                <button>Chat</button>
+            </div>
+        }
+    </div>
+    <div id="chat-heads">
+    </div>
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/Scripts/jquery-ui-1.9.2.min.js")
+    @Scripts.Render("~/Scripts/jquery.signalR-1.0.1.min.js")
+    @Scripts.Render("~/signalr/hubs")
+    <script src="~/Scripts/bvirtualchat-hub.js"></script>
+    <script type="text/javascript">
+
+        var $__ME=@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model));
+
+        function refreshOnlineUserList(userList) {
+            if (userList) {
+                $("#chat-box-container").empty();
+                $.each(userList, function (i, obj) {
+                    if(!obj.IsProctor)
+                    {
+                        var box = '<div class="user-box">';
+                        box += "<h2>" + obj.UserName + "</h2>";
+                        box += "<button onclick=\"fnStartHead('" + obj.UID + "','" + obj.UserName + "')\">Chat</button><span class='blink'>*</span>";
+                        box += "</div>";
+                        $("#chat-box-container").append(box);
+                    }
+                });
+            }
+        }
+
+        function fnStartHead(id, name) {
+            var div = '<div class="chat-heads-dialog ui-app " id="' + id + '" title="' + name + '"'+ '" data-xtitle="' + name + '">';
+            div += '<div class="messages ui-app "></div>';
+            div += '<input class="txt ui-app " type="text" value="" />';
+            div += '<button onclick="fnSendMessage(this)">Send</button>';
+            div += '</div>';
+            $("#chat-heads").append(div);
+            $("#" + id).dialog({
+                modal: false,
+                buttons: {}
+            });
+        }
+
+        function blink(id)
+        {
+            var elm=$("."+id);
+            
+
+        }
+
+        function getChatMessage(message, to, from) {
+            if(to==$__ME.UID)
+            {
+                $("#"+from).find(".messages").append("<div class='message-he'><h6>"+ $("#"+from).attr("data-xtitle")+" :<h6/><p>" + message + "</p></div>");
+                $("#"+from).find(".messages")[0].scrollTop=  $("#"+from).find(".messages")[0].scrollHeight;
+            }
+        }
+
+        var chat = new initChatHub(refreshOnlineUserList, getChatMessage);
+
+        function fnSendMessage(obj) {
+            var message = $(obj).parent().find(".txt").val();
+            if(message!="")
+            {
+
+                var to = $(obj).parent().attr("id");
+                $(obj).parent().find(".messages").append("<div class='message-you'><h6>You :<h6/><p>" + message + "</p></div>");
+                chat.sendChatMesage(message, to,$__ME.UID);
+                $(obj).parent().find(".txt").val("");
+                $(obj).parent().find(".messages")[0].scrollTop=  $(obj).parent().find(".messages")[0].scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

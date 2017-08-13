@@ -1,0 +1,79 @@
+﻿@model MvcDemo.Models.UserInfo
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Student</title>
+    <link href="~/Content/themes/base/jquery-ui.css" rel="stylesheet" />
+    <style type="text/css">
+        .chat-box {
+            float: right;
+            width: 400px;
+            border: 1px solid green;
+            min-height: 700px;
+        }
+
+        #messages {
+            height: 500px;
+            overflow-y: scroll;
+            border: 1px solid black;
+        }
+         .message-you {
+            border: 1px solid pink;
+        }
+
+        .message-he {
+            border: 1px solid yellow;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-box">
+        <h1 id="nick"></h1>
+        <div id="messages">
+        </div>
+        <div>
+            <input type="text" id="txt" value="" />
+            <button onclick="fnSendMessage(this)">Send</button>
+        </div>
+    </div>
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/Scripts/jquery-ui-1.9.2.min.js")
+    @Scripts.Render("~/Scripts/jquery.signalR-1.0.1.min.js")
+    @Scripts.Render("~/signalr/hubs")
+    <script src="~/Scripts/bvirtualchat-hub.js"></script>
+    <script type="text/javascript">
+        var $__ME=@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model));
+        var $__AdminId=null;
+    </script>
+    <script type="text/javascript">
+        $("#nick").html($__ME.UserName);
+        function getChatMessage(message, to, from) {
+            if(to==$__ME.UID)
+            {
+                $__AdminId=from;
+                $("#messages").append("<div class='message-he'><h6>Proctor :<h6/><p>" + message + "</p></div>");
+                $("#messages")[0].scrollTop=  $("#messages")[0].scrollHeight;
+            }
+        }
+        var chat = new initChatHub(null, getChatMessage);
+
+        
+        function fnSendMessage() {
+            var message = $("#txt").val();
+            if(message!="")
+            {
+                $("#messages").append("<div class='message-you'><h6>You :<h6/><p>" + message + "</p></div>");
+                chat.sendChatMesage(message, $__AdminId,$__ME.UID);
+                $("#txt").val("");
+                $("#messages")[0].scrollTop=  $("#messages")[0].scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+﻿@{
+    ViewBag.Title = "SinalRChat";
+}
+<h2>SinalR Chat</h2>
+<style type="text/css">
+    .loginDailog {
+        outline: 0px;
+        z-index: 1002;
+        position: absolute;
+        height: 222.016px;
+        width: 424.016px;
+        top: 224px;
+        left: 446px;
+        display: block;
+    }
+</style>
+@section scripts{
+    @Scripts.Render("~/Scripts/jquery-ui-1.9.2.min.js")
+    @Scripts.Render("~/Scripts/jquery.signalR-1.0.1.min.js")
+    @Scripts.Render("/signalr/hubs")
+    <script type="text/javascript">
+
+        function funC(id) {
+            $("#users").val(id);
+        }
+
+        var LoginUserType = "";
+
+        $(function () {
+            showModalUserNickName();
+        });
+
+        function showModalUserNickName() {
+            $("#dialog").dialog({
+                modal: true,
+                buttons: {
+                    Ok: function () {
+                        $(this).dialog("close");
+                        startChartHub();
+                    }
+                }
+            });
+        }
+
+
+
+
+
+        function startChartHub() {
+            var chat = $.connection.chatHub;
+            // Get the user name.
+            $('#nickname').val($('#nick').val());
+            chat.client.differentName = function (name) {
+                showModalUserNickName();
+                return false;
+                // Prompts for different user name
+                $('#nickname').val($('#nick').val());
+                chat.server.notify($('#nickname').val(), $.connection.hub.id);
+            };
+
+            var userType = "";
+            userType = $('#userType').val();
+            // 2 == Admin and 1==Student
+            LoginUserType = userType;
+            chat.client.online = function (name, id) {
+                // Update list of users
+
+                if (userType == "Proctor") {
+                    if (name == $('#nickname').val()) {
+                        $('#onlineproc').html('<div class="border"><h3 style="color:red">Proctor:' + name + '</h3></div>');
+                    }
+                    else {
+                        $("#users").append('<option value="' + id + '">' + name + '</option>');
+                        $('#onlineusers').append('<a class="border" href="javascript:void(0);" onclick="funC(\'' + id + '\')">' + name + '</a><br />');
+                    }
+                }
+                else {
+                    debugger;
+                    $("#onlineusers").hide();
+                    name = $('#nickname').val()
+                    $('#ActiveUser').empty().append('<h3 style="color:green"> Welcome : ' + name + '</h3>');
+                }
+
+            };
+
+
+
+            chat.client.enters = function (name, id) {
+                //$('#chatlog').append('<div style="font-style:italic;"><i>' + name + ' joins the conversation</i></div>');
+                // $("#users").append('<option value="' + name + '">' + name + '</option>');
+
+                if (LoginUserType == 'Proctor') {
+                   // $('#chatlog').append('<div style="font-style:italic;"><i>' + name + ' joins the conversation</i></div>');
+                    $('#onlineusers').append('<div class="border">' + name + '</div>');
+                    $("#users").append('<option value="' + id + '">' + name + '</option>');
+                }
+
+            };
+            // Create a function that the hub can call to broadcast chat messages.
+            chat.client.broadcastMessage = function (name, message) {
+                //Interpret smileys
+                message = message.replace(":)", "<img src=\"/images/smile.gif\" class=\"smileys\" />");
+                message = message.replace("lol", "<img src=\"/images/laugh.gif\" class=\"smileys\" />");
+                message = message.replace(":o", "<img src=\"/images/cool.gif\" class=\"smileys\" />");
+
+                //display the message
+                $('#chatlog').append('<div class="border"><span style="color:red">' + name + '</span>: ' + message + '</div>');
+            };
+
+            chat.client.disconnected = function (name) {
+                //Calls when someone leaves the page
+                $('#chatlog').append('<div style="font-style:italic;"><i>' + name + ' leaves the conversation</i></div>');
+                $('#onlineusers div').remove(":contains('" + name + "')");
+                $("#users option").remove(":contains('" + name + "')");
+            }
+
+            // Start the connection.
+            $.connection.hub.start().done(function () {
+                //Calls the notify method of the server
+                chat.server.notify($('#nickname').val(), $.connection.hub.id);
+
+                $('#btnsend').click(function () {
+                    alert($("#users").val());
+                    if ($("#users").val() == "Proctor") {
+                        alert($("#users").val());
+                        // Call the Send method on the hub.
+                        chat.server.send($('#nickname').val(), $('#message').val());
+                    }
+                    else {
+                        chat.server.sendToSpecific($('#nickname').val(), $('#message').val(), $("#users").val());
+                    }
+                    // Clear text box and reset focus for next comment.
+                    $('#message').val('').focus();
+                });
+
+            });
+        }
+
+    </script>
+}
+
+<div id="container">
+    <input type="hidden" id="nickname" />
+    <div id="chatlog"></div>
+     <div id="onlineproc">
+
+    </div>
+    <div id="onlineusers">
+        <b>Online Students</b><br />
+    </div>
+    <div id="chatarea">
+        <div id="ActiveUser"></div>
+        <div class="messagelog">
+            <textarea spellcheck="true" id="message" class="messagebox"></textarea>
+        </div>
+        <div class="actionpane">
+            <input type="button" id="btnsend" value="Send" />
+        </div>
+        <div class="actionpane">
+            <select id="users">
+                <option value="All">All</option>
+            </select>
+        </div>
+    </div>
+    <div id="dialog" title="Enter your name to start a chat.">
+        <input type="text" id="nick" />
+        <div>
+            <label>User Name</label>
+        </div>
+        <div>
+            <input type="text" id="txtUserName" />
+        </div>
+        <div>
+            <label>Password</label>
+        </div>
+        <div>
+            <input type="text" id="txtPwd" />
+        </div>
+        <div>
+            <label>user Type</label>
+        </div>
+        <div>
+            <select id="userType">
+                <option value="0">-Select-</option>
+                <option value="1">Student</option>
+                <option value="Proctor">Proctor</option>
+            </select>
+        </div>
+    </div>
+</div>
